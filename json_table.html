@@ -6,34 +6,59 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<h2>JSON Table Viewer with Configurable Columns</h2>
-<div class="json-section">
-  <h3>Paste Your JSON Array:</h3>
-  <textarea id="jsonInput" rows="10"></textarea>
-  <button onclick="loadJson()">Load JSON</button>
-</div>
-<div class="config-section">
-  <h3>Column Config (editable JSON):</h3>
-  <textarea id="configInput" rows="6"></textarea>
-  <button onclick="loadConfig()">Update Columns</button>
-</div>
-<div>
-  <h4>Config Syntax:</h4>
-  <pre>
-Each item in the column array is either:
+<div class="container">
+  <h2>JSON Table Viewer</h2>
+  
+  <div class="json-section">
+    <h3>📊 Paste Your JSON Array:</h3>
+    <textarea id="jsonInput" rows="10" placeholder="Paste your JSON array here..."></textarea>
+    <button onclick="loadJson()">🔄 Load JSON</button>
+  </div>
+  
+  <div class="config-section">
+    <h3>⚙️ Column Configuration:</h3>
+    <textarea id="configInput" rows="6" placeholder="Configure visible columns..."></textarea>
+    <button onclick="loadConfig()">📋 Update Columns</button>
+  </div>
+  
+  <div>
+    <h4>💡 Config Syntax:</h4>
+    <pre>Each item in the column array is either:
 - a string path (e.g., "examples.x")
 - an object { "path": "examples.x", "label": "X Value", "hidden": true/false }
+
 Examples:
 [
   "Name",
   { "path": "examples.x", "label": "X Value" },
   { "path": "id", "hidden": true }
 ]
-Omitted or hidden columns are not displayed.
-  </pre>
+
+Omitted or hidden columns are not displayed.</pre>
+  </div>
+  
+  <div class="table-section">
+    <h3>📋 Rendered Table:</h3>
+    <div id="tableContainer"></div>
+  </div>
 </div>
-<h3>Rendered Table:</h3>
-<div id="tableContainer"></div>
+
+<!-- Modal for row details -->
+<div id="rowModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Row Details</h3>
+      <span class="close">&times;</span>
+    </div>
+    <div class="modal-navigation">
+      <button id="prevRowBtn" class="nav-btn">← Previous</button>
+      <span id="rowPosition"></span>
+      <button id="nextRowBtn" class="nav-btn">Next →</button>
+    </div>
+    <div id="rowDetails"></div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
