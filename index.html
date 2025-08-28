@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Table Viewer - Web Component Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .demo-header {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .demo-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 2.5em;
+      font-weight: 300;
+    }
+
+    .demo-header p {
+      margin: 0;
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .demo-content {
+      padding: 30px;
+    }
+
+    .demo-section {
+      margin-bottom: 40px;
+    }
+
+    .demo-section h2 {
+      color: #2c3e50;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .demo-controls {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .demo-controls label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #495057;
+    }
+
+    .demo-controls textarea {
+      width: 100%;
+      min-height: 120px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    .demo-controls button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .demo-controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .code-example {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    .code-example .tag {
+      color: #81c784;
+    }
+
+    .code-example .attr {
+      color: #ffb74d;
+    }
+
+    .code-example .string {
+      color: #64b5f6;
+    }
+
+    .code-example .comment {
+      color: #9e9e9e;
+      font-style: italic;
+    }
+
+    json-table-viewer {
+      margin: 20px 0;
+      display: block;
+    }
+
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .api-table th,
+    .api-table td {
+      border: 1px solid #e1e8ed;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .api-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .api-table code {
+      background: #f1f3f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1>JSON Table Viewer</h1>
+      <p>A powerful Web Component for visualizing complex JSON data in table format</p>
+    </div>
+
+    <div class="demo-content">
+      <div class="demo-section">
+        <h2>🚀 Interactive Demo</h2>
+        
+        <div class="demo-controls">
+          <label for="demoData">Sample JSON Data:</label>
+          <textarea id="demoData">[
+  {
+    "Name": "Alice",
+    "Value": 42,
+    "examples": {
+      "x": "hello",
+      "y": "world"
+    },
+    "id": 1
+  },
+  {
+    "Name": "Bob",
+    "Value": 100,
+    "examples": {
+      "x": "foo",
+      "y": "bar"
+    },
+    "id": 2
+  },
+  {
+    "Name": "Charlie",
+    "Value": null,
+    "examples": ["test", "array"],
+    "id": 3
+  }
+]</textarea>
+          
+          <label for="demoConfig">Column Configuration:</label>
+          <textarea id="demoConfig">["Name", "Value", "examples.x", "examples.y", "id"]</textarea>
+          
+          <button onclick="updateDemo()">Update Demo</button>
+          <button onclick="loadSampleData()">Load Complex Sample</button>
+          <button onclick="resetDemo()">Reset</button>
+        </div>
+
+        <json-table-viewer id="demoViewer" show-controls></json-table-viewer>
+      </div>
+
+      <div class="demo-section">
+        <h2>📝 Basic Usage</h2>
+        
+        <div class="code-example">
+<span class="comment">&lt;!-- Include the Web Component --&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"json-table-viewer.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+
+<span class="comment">&lt;!-- Use the component with controls --&gt;</span>
+<span class="tag">&lt;json-table-viewer</span> <span class="attr">show-controls</span><span class="tag">&gt;&lt;/json-table-viewer&gt;</span>
+
+<span class="comment">&lt;!-- Use with attributes --&gt;</span>
+<span class="tag">&lt;json-table-viewer</span>
+  <span class="attr">data</span>=<span class="string">'[{"name":"Alice","age":30}]'</span>
+  <span class="attr">config</span>=<span class="string">'["name","age"]'</span>
+<span class="tag">&gt;&lt;/json-table-viewer&gt;</span>
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <h2>🔧 JavaScript API</h2>
+        
+        <div class="code-example">
+<span class="comment">// Get reference to the component</span>
+<span class="tag">const</span> viewer = document.querySelector(<span class="string">'json-table-viewer'</span>);
+
+<span class="comment">// Set data programmatically</span>
+viewer.setData([
+  { name: <span class="string">"John"</span>, age: 25, city: <span class="string">"New York"</span> },
+  { name: <span class="string">"Jane"</span>, age: 30, city: <span class="string">"London"</span> }
+]);
+
+<span class="comment">// Set column configuration</span>
+viewer.setConfig([<span class="string">"name"</span>, <span class="string">"age"</span>, <span class="string">"city"</span>]);
+
+<span class="comment">// Listen to events</span>
+viewer.addEventListener(<span class="string">'rowdetails'</span>, (e) => {
+  console.log(<span class="string">'Row details opened:'</span>, e.detail);
+});
+
+viewer.addEventListener(<span class="string">'columnAdd'</span>, (e) => {
+  console.log(<span class="string">'Column added:'</span>, e.detail.path);
+});
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <h2>📚 API Reference</h2>
+        
+        <h3>Attributes</h3>
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Attribute</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>data</code></td>
+              <td>JSON String</td>
+              <td>The JSON array data to display in the table</td>
+            </tr>
+            <tr>
+              <td><code>config</code></td>
+              <td>JSON String</td>
+              <td>Array of column configurations</td>
+            </tr>
+            <tr>
+              <td><code>show-controls</code></td>
+              <td>Boolean</td>
+              <td>Whether to show the input controls for data and config</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Methods</h3>
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Parameters</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>setData(data)</code></td>
+              <td>Array</td>
+              <td>Set the data array programmatically</td>
+            </tr>
+            <tr>
+              <td><code>getData()</code></td>
+              <td>-</td>
+              <td>Get the current data array</td>
+            </tr>
+            <tr>
+              <td><code>setConfig(config)</code></td>
+              <td>Array</td>
+              <td>Set the column configuration</td>
+            </tr>
+            <tr>
+              <td><code>getConfig()</code></td>
+              <td>-</td>
+              <td>Get the current column configuration</td>
+            </tr>
+            <tr>
+              <td><code>showHiddenRows()</code></td>
+              <td>-</td>
+              <td>Show all hidden rows</td>
+            </tr>
+            <tr>
+              <td><code>exportData()</code></td>
+              <td>-</td>
+              <td>Export current state (data, config, hidden rows)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Detail</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>datachange</code></td>
+              <td><code>{ data }</code></td>
+              <td>Fired when data is changed</td>
+            </tr>
+            <tr>
+              <td><code>configchange</code></td>
+              <td><code>{ config }</code></td>
+              <td>Fired when column configuration is changed</td>
+            </tr>
+            <tr>
+              <td><code>rowdetails</code></td>
+              <td><code>{ rowIndex, row }</code></td>
+              <td>Fired when row details modal is opened</td>
+            </tr>
+            <tr>
+              <td><code>rowhide</code></td>
+              <td><code>{ rowIndex }</code></td>
+              <td>Fired when a row is hidden</td>
+            </tr>
+            <tr>
+              <td><code>columnAdd</code></td>
+              <td><code>{ path, config }</code></td>
+              <td>Fired when a column is added from the modal</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="demo-section">
+        <h2>✨ Features</h2>
+        <ul>
+          <li><strong>🎨 Modern Design:</strong> Beautiful gradient styling with smooth animations</li>
+          <li><strong>📱 Responsive:</strong> Works on desktop and mobile devices</li>
+          <li><strong>🔍 Row Details:</strong> Click rows to see detailed field-by-field view</li>
+          <li><strong>⌨️ Keyboard Navigation:</strong> Use arrow keys to navigate between row details</li>
+          <li><strong>🚫 Hide Rows:</strong> Hide unwanted rows with a single click</li>
+          <li><strong>➕ Dynamic Columns:</strong> Add columns on-the-fly from the row details modal</li>
+          <li><strong>🌲 Nested Data:</strong> Automatically renders nested objects and arrays</li>
+          <li><strong>🎛️ Configurable:</strong> Flexible column configuration with labels and visibility</li>
+          <li><strong>🔧 Web Component:</strong> Easy to integrate into any web application</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="json-table-viewer.js"></script>
+  <script>
+    const viewer = document.getElementById('demoViewer');
+    const demoData = document.getElementById('demoData');
+    const demoConfig = document.getElementById('demoConfig');
+
+    // Initialize demo
+    updateDemo();
+
+    function updateDemo() {
+      try {
+        const data = JSON.parse(demoData.value);
+        const config = JSON.parse(demoConfig.value);
+        viewer.setData(data);
+        viewer.setConfig(config);
+      } catch (e) {
+        console.error('Error updating demo:', e);
+        alert('Invalid JSON in demo data or config');
+      }
+    }
+
+    function loadSampleData() {
+      const complexData = [
+        {
+          "Name": "Alice Johnson",
+          "Value": 42.5,
+          "examples": {
+            "x": "hello world",
+            "y": { "nested": "object", "count": 5 }
+          },
+          "id": 1001,
+          "tags": ["frontend", "react", "javascript"],
+          "metadata": {
+            "created": "2024-01-15",
+            "active": true,
+            "score": 95.7
+          }
+        },
+        {
+          "Name": "Bob Smith",
+          "Value": null,
+          "examples": [
+            { "type": "array", "items": [1, 2, 3] },
+            { "type": "string", "value": "test" }
+          ],
+          "id": 1002,
+          "tags": ["backend", "node.js", "database"],
+          "metadata": {
+            "created": "2024-01-10",
+            "active": false,
+            "score": null
+          }
+        },
+        {
+          "Name": "Charlie Brown",
+          "Value": 100,
+          "examples": {
+            "x": [1, 2, 3, 4, 5],
+            "y": {
+              "deep": {
+                "nested": {
+                  "value": "very deep"
+                }
+              }
+            }
+          },
+          "id": 1003,
+          "tags": [],
+          "metadata": {
+            "created": "2024-01-20",
+            "active": true,
+            "score": 88.2
+          }
+        }
+      ];
+
+      const complexConfig = [
+        "Name",
+        { "path": "Value", "label": "Score" },
+        "examples.x",
+        "metadata.created",
+        "metadata.active",
+        { "path": "id", "label": "ID" }
+      ];
+
+      demoData.value = JSON.stringify(complexData, null, 2);
+      demoConfig.value = JSON.stringify(complexConfig, null, 2);
+      updateDemo();
+    }
+
+    function resetDemo() {
+      demoData.value = `[
+  {
+    "Name": "Alice",
+    "Value": 42,
+    "examples": {
+      "x": "hello",
+      "y": "world"
+    },
+    "id": 1
+  },
+  {
+    "Name": "Bob",
+    "Value": 100,
+    "examples": {
+      "x": "foo",
+      "y": "bar"
+    },
+    "id": 2
+  },
+  {
+    "Name": "Charlie",
+    "Value": null,
+    "examples": ["test", "array"],
+    "id": 3
+  }
+]`;
+      demoConfig.value = '["Name", "Value", "examples.x", "examples.y", "id"]';
+      updateDemo();
+    }
+
+    // Event listeners for demo
+    viewer.addEventListener('rowdetails', (e) => {
+      console.log('Row details opened for row:', e.detail.rowIndex);
+    });
+
+    viewer.addEventListener('columnAdd', (e) => {
+      console.log('Column added:', e.detail.path);
+      // Update the demo config textarea to reflect the change
+      demoConfig.value = JSON.stringify(e.detail.config, null, 2);
+    });
+
+    viewer.addEventListener('rowhide', (e) => {
+      console.log('Row hidden:', e.detail.rowIndex);
+    });
+  </script>
+</body>
+</html>

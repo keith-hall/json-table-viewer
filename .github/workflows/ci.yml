@@ -46,9 +46,17 @@ jobs:
         try {
           const js = fs.readFileSync('app.js', 'utf8');
           acorn.parse(js, { ecmaVersion: 2020 });
-          console.log('✓ JavaScript is valid');
+          console.log('✓ app.js is valid');
         } catch (e) {
-          console.error('✗ JavaScript validation failed:', e.message);
+          console.error('✗ app.js validation failed:', e.message);
+          process.exit(1);
+        }
+        try {
+          const webComponent = fs.readFileSync('json-table-viewer.js', 'utf8');
+          acorn.parse(webComponent, { ecmaVersion: 2020 });
+          console.log('✓ json-table-viewer.js is valid');
+        } catch (e) {
+          console.error('✗ json-table-viewer.js validation failed:', e.message);
           process.exit(1);
         }
         "
@@ -59,14 +67,21 @@ jobs:
         const fs = require('fs');
         const html = fs.readFileSync('json_table.html', 'utf8');
         if (!html.includes('styles.css')) {
-          console.error('✗ HTML does not reference styles.css');
+          console.error('✗ json_table.html does not reference styles.css');
           process.exit(1);
         }
         if (!html.includes('app.js')) {
-          console.error('✗ HTML does not reference app.js');
+          console.error('✗ json_table.html does not reference app.js');
           process.exit(1);
         }
-        console.log('✓ HTML references external files correctly');
+        console.log('✓ json_table.html references external files correctly');
+        
+        const indexHtml = fs.readFileSync('index.html', 'utf8');
+        if (!indexHtml.includes('json-table-viewer.js')) {
+          console.error('✗ index.html does not reference json-table-viewer.js');
+          process.exit(1);
+        }
+        console.log('✓ index.html references Web Component correctly');
         "
 
   deploy:
