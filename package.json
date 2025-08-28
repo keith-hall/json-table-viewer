@@ -1,0 +1,16 @@
+{
+  "name": "json-table-viewer",
+  "version": "1.0.0",
+  "description": "A browser based JSON viewer, with configurable top-level columns. Suitable for browsing arrays of deeply nested objects, and surfacing important details and hiding irrelevant ones.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "acorn": "^8.15.0",
+    "css-tree": "^3.1.0"
+  }
+}
