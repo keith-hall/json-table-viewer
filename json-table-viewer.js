@@ -24,42 +24,48 @@ class JsonTableViewer extends HTMLElement {
   }
 
   get data() {
-    // TODO: does having a data attribute prevent any changes to this.currentData from taking effect?
-    //       - maybe we need a different approach. Same for config.
-    const dataAttr = this.getAttribute('data');
-    if (dataAttr) {
-      try {
-        return JSON.parse(dataAttr);
-      } catch (e) {
-        console.error('Invalid JSON in data attribute:', e);
-        return [];
-      }
+    // Prioritize programmatically set data over attribute data
+    // This prevents attribute data from overriding programmatic changes
+    if (this.currentData.length > 0 || !this.getAttribute('data')) {
+      return this.currentData;
     }
-    return this.currentData;
+    
+    const dataAttr = this.getAttribute('data');
+    try {
+      return JSON.parse(dataAttr);
+    } catch (e) {
+      console.error('Invalid JSON in data attribute:', e);
+      return [];
+    }
   }
 
   set data(value) {
     this.currentData = Array.isArray(value) ? value : [];
-    // TODO: update text area in case controls are shown
+    // Update textarea control if it exists and controls are shown
+    this.updateDataTextarea();
     this.updateTable();
   }
 
   get config() {
-    const configAttr = this.getAttribute('config');
-    if (configAttr) {
-      try {
-        return JSON.parse(configAttr);
-      } catch (e) {
-        console.error('Invalid JSON in config attribute:', e);
-        return [];
-      }
+    // Prioritize programmatically set config over attribute config
+    // This prevents attribute config from overriding programmatic changes
+    if (this.currentConfig.length > 0 || !this.getAttribute('config')) {
+      return this.currentConfig;
     }
-    return this.currentConfig;
+    
+    const configAttr = this.getAttribute('config');
+    try {
+      return JSON.parse(configAttr);
+    } catch (e) {
+      console.error('Invalid JSON in config attribute:', e);
+      return [];
+    }
   }
 
   set config(value) {
     this.currentConfig = Array.isArray(value) ? value : [];
-    // TODO: update text area in case controls are shown
+    // Update textarea control if it exists and controls are shown
+    this.updateConfigTextarea();
     this.updateTable();
   }
 
@@ -70,7 +76,8 @@ class JsonTableViewer extends HTMLElement {
   render() {
     const showControls = this.showControls;
     
-    // TODO: can shadowRoot styles be moved to CSS or not really?
+    // Shadow DOM styles must be inline as they need to be encapsulated
+    // Moving to external CSS would break the component's style isolation
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -440,6 +447,24 @@ class JsonTableViewer extends HTMLElement {
   }
 
   // Helper methods from the original code
+  updateDataTextarea() {
+    if (this.showControls) {
+      const jsonInput = this.shadowRoot.getElementById('jsonInput');
+      if (jsonInput) {
+        jsonInput.value = JSON.stringify(this.currentData, null, 2);
+      }
+    }
+  }
+
+  updateConfigTextarea() {
+    if (this.showControls) {
+      const configInput = this.shadowRoot.getElementById('configInput');
+      if (configInput) {
+        configInput.value = JSON.stringify(this.currentConfig, null, 2);
+      }
+    }
+  }
+
   getValueByPath(obj, path) {
     if (!path) return undefined;
     let parts = typeof path === 'string' ? path.split('.') : path;
@@ -466,12 +491,10 @@ class JsonTableViewer extends HTMLElement {
   }
 
   escapeHTML(str) {
-    // TODO: built in JS way of doing this?
-    return String(str)
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
+    // Use the browser's built-in HTML escaping via textContent
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
   }
 
   renderCell(value) {
@@ -524,8 +547,9 @@ class JsonTableViewer extends HTMLElement {
     
     let thead = '';
     if (isMainTable && colDefs.length) {
-      // TODO: make Actions column only wide enough for the buttons and non-resizable
-      // TODO: make other columns resizable by click and dragging the right cell/column border, or double clicking to fit the content
+      // Future enhancement: Make Actions column fixed width and other columns resizable
+      // - Actions column should be only wide enough for buttons and non-resizable
+      // - Other columns should be resizable by dragging borders or double-clicking to fit content
       thead = `<tr><th>Actions</th>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
     } else if (colDefs.length) {
       thead = `<tr>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
@@ -627,9 +651,10 @@ class JsonTableViewer extends HTMLElement {
                        typeof value === 'object' ? JSON.stringify(value) : 
                        String(value);
       
-      // TODO: show hide column instead when column already shown
-      // TODO: some way for the user of this component to add additional custom action buttons and receive callbacks when clicked on
-      //       - don't take up lots of space but perhaps display a hamburger menu which opens a context menu with the choices - including the show/hide column one
+      // Future enhancement: Add column visibility toggle and custom action buttons
+      // - Show "Hide Column" button when column is already visible
+      // - Add hamburger menu for additional custom actions with callback support
+      // - Keep UI compact while providing extensibility for component users
       tableHTML += `
         <tr>
           <td class="field-name">
@@ -713,10 +738,18 @@ class JsonTableViewer extends HTMLElement {
     this.updateTable();
   }
 
-  // TODO: is this necessary when those fields can be accessed directly?
-  //       - if we have a concept of public/private state, need to document it?
-  //       - if removing this, update documentation
-  //       - if keeping this, add a way to get hidden rows and unhide a row etc.
+  getHiddenRows() {
+    return Array.from(this.hiddenRows);
+  }
+
+  unhideRow(rowIndex) {
+    this.hiddenRows.delete(rowIndex);
+    this.updateTable();
+    this.dispatchEvent(new CustomEvent('rowunhide', { detail: { rowIndex } }));
+  }
+
+  // Export current state including data, config, and hidden rows
+  // This method provides a complete snapshot for persistence or debugging
   exportData() {
     return {
       data: this.data,
