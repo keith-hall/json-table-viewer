@@ -24,6 +24,8 @@ class JsonTableViewer extends HTMLElement {
   }
 
   get data() {
+    // TODO: does having a data attribute prevent any changes to this.currentData from taking effect?
+    //       - maybe we need a different approach. Same for config.
     const dataAttr = this.getAttribute('data');
     if (dataAttr) {
       try {
@@ -38,6 +40,7 @@ class JsonTableViewer extends HTMLElement {
 
   set data(value) {
     this.currentData = Array.isArray(value) ? value : [];
+    // TODO: update text area in case controls are shown
     this.updateTable();
   }
 
@@ -56,6 +59,7 @@ class JsonTableViewer extends HTMLElement {
 
   set config(value) {
     this.currentConfig = Array.isArray(value) ? value : [];
+    // TODO: update text area in case controls are shown
     this.updateTable();
   }
 
@@ -66,6 +70,7 @@ class JsonTableViewer extends HTMLElement {
   render() {
     const showControls = this.showControls;
     
+    // TODO: can shadowRoot styles be moved to CSS or not really?
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -519,6 +524,8 @@ class JsonTableViewer extends HTMLElement {
     
     let thead = '';
     if (isMainTable && colDefs.length) {
+      // TODO: make Actions column only wide enough for the buttons and non-resizable
+      // TODO: make other columns resizable by click and dragging the right cell/column border, or double clicking to fit the content
       thead = `<tr><th>Actions</th>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
     } else if (colDefs.length) {
       thead = `<tr>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
@@ -534,7 +541,7 @@ class JsonTableViewer extends HTMLElement {
       
       let rowContent = '';
       if (isMainTable) {
-        rowContent += `<td><button class="hide-btn" data-row-index="${index}">Hide</button></td>`;
+        rowContent += `<td><button class="hide-btn" data-row-index="${index}">-</button></td>`;
       }
       
       rowContent += colDefs.map(col => {
@@ -620,6 +627,9 @@ class JsonTableViewer extends HTMLElement {
                        typeof value === 'object' ? JSON.stringify(value) : 
                        String(value);
       
+      // TODO: show hide column instead when column already shown
+      // TODO: some way for the user of this component to add additional custom action buttons and receive callbacks when clicked on
+      //       - don't take up lots of space but perhaps display a hamburger menu which opens a context menu with the choices - including the show/hide column one
       tableHTML += `
         <tr>
           <td class="field-name">
@@ -703,6 +713,10 @@ class JsonTableViewer extends HTMLElement {
     this.updateTable();
   }
 
+  // TODO: is this necessary when those fields can be accessed directly?
+  //       - if we have a concept of public/private state, need to document it?
+  //       - if removing this, update documentation
+  //       - if keeping this, add a way to get hidden rows and unhide a row etc.
   exportData() {
     return {
       data: this.data,
