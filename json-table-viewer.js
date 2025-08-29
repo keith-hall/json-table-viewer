@@ -182,6 +182,39 @@ class JsonTableViewer extends HTMLElement {
           color: #495057;
           position: sticky;
           top: 0;
+          position: relative;
+        }
+
+        .actions-header {
+          width: 100px;
+          min-width: 100px;
+          max-width: 100px;
+          resize: none;
+        }
+
+        .resizable-header {
+          min-width: 80px;
+          resize: horizontal;
+          overflow: hidden;
+        }
+
+        .resize-handle {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 4px;
+          height: 100%;
+          background: transparent;
+          cursor: col-resize;
+          user-select: none;
+        }
+
+        .resize-handle:hover {
+          background: #667eea;
+        }
+
+        .resize-handle:active {
+          background: #5a67d8;
         }
 
         tr:nth-child(even) {
@@ -336,6 +369,88 @@ class JsonTableViewer extends HTMLElement {
           box-shadow: none;
         }
 
+        .hide-column-btn {
+          background: #ffc107;
+          color: #212529;
+          padding: 3px 6px;
+          font-size: 10px;
+          border-radius: 2px;
+          margin-left: 6px;
+        }
+
+        .hide-column-btn:hover {
+          background: #e0a800;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .field-actions {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .actions-menu {
+          position: relative;
+          display: inline-block;
+        }
+
+        .actions-toggle {
+          background: #6c757d;
+          color: white;
+          border: none;
+          padding: 3px 8px;
+          font-size: 10px;
+          border-radius: 2px;
+          cursor: pointer;
+          margin-left: 6px;
+        }
+
+        .actions-toggle:hover {
+          background: #5a6268;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .actions-dropdown {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: white;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
+          min-width: 120px;
+        }
+
+        .actions-dropdown.show {
+          display: block;
+        }
+
+        .dropdown-item {
+          display: block;
+          width: 100%;
+          padding: 6px 12px;
+          background: none;
+          border: none;
+          text-align: left;
+          cursor: pointer;
+          font-size: 12px;
+          border-bottom: 1px solid #f8f9fa;
+        }
+
+        .dropdown-item:last-child {
+          border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+          background: #f8f9fa;
+          transform: none;
+          box-shadow: none;
+        }
+
         .error {
           color: #dc3545;
           font-weight: 500;
@@ -388,6 +503,12 @@ class JsonTableViewer extends HTMLElement {
   }
 
   setupEventListeners() {
+    // Variable to track resizing state
+    let isResizing = false;
+    let currentResizeColumn = null;
+    let startX = 0;
+    let startWidth = 0;
+
     this.shadowRoot.addEventListener('click', (e) => {
       if (e.target.matches('#loadJsonBtn')) {
         this.loadJson();
@@ -412,8 +533,53 @@ class JsonTableViewer extends HTMLElement {
       } else if (e.target.matches('.add-column-btn')) {
         const path = e.target.dataset.path;
         this.addColumn(path);
+      } else if (e.target.matches('.hide-column-btn')) {
+        const path = e.target.dataset.path;
+        this.hideColumn(path);
+      } else if (e.target.matches('.actions-toggle')) {
+        e.stopPropagation();
+        const path = e.target.dataset.path;
+        this.toggleActionsMenu(path);
+      } else if (e.target.matches('.dropdown-item')) {
+        e.stopPropagation();
+        const action = e.target.dataset.action;
+        const path = e.target.dataset.path;
+        this.handleCustomAction(action, path);
+      } else if (e.target.matches('.resizable-header')) {
+        // Double-click to auto-fit content
+        this.autoFitColumn(e.target);
       }
     });
+
+    // Column resize functionality
+    this.shadowRoot.addEventListener('mousedown', (e) => {
+      if (e.target.matches('.resize-handle')) {
+        e.preventDefault();
+        isResizing = true;
+        currentResizeColumn = e.target.parentElement;
+        startX = e.clientX;
+        startWidth = parseInt(window.getComputedStyle(currentResizeColumn).width, 10);
+        
+        document.addEventListener('mousemove', handleResize);
+        document.addEventListener('mouseup', stopResize);
+      }
+    });
+
+    const handleResize = (e) => {
+      if (!isResizing) return;
+      const width = startWidth + e.clientX - startX;
+      if (width > 50) { // Minimum column width
+        currentResizeColumn.style.width = width + 'px';
+        currentResizeColumn.style.minWidth = width + 'px';
+      }
+    };
+
+    const stopResize = () => {
+      isResizing = false;
+      currentResizeColumn = null;
+      document.removeEventListener('mousemove', handleResize);
+      document.removeEventListener('mouseup', stopResize);
+    };
 
     this.shadowRoot.addEventListener('keydown', (e) => {
       const modal = this.shadowRoot.getElementById('rowModal');
@@ -442,6 +608,13 @@ class JsonTableViewer extends HTMLElement {
       const modal = this.shadowRoot.getElementById('rowModal');
       if (e.target === modal) {
         this.closeModal();
+      }
+      
+      // Close action dropdowns when clicking outside
+      if (!e.target.matches('.actions-toggle') && !e.target.closest('.actions-dropdown')) {
+        this.shadowRoot.querySelectorAll('.actions-dropdown.show').forEach(dd => {
+          dd.classList.remove('show');
+        });
       }
     });
   }
@@ -550,9 +723,11 @@ class JsonTableViewer extends HTMLElement {
       // Future enhancement: Make Actions column fixed width and other columns resizable
       // - Actions column should be only wide enough for buttons and non-resizable
       // - Other columns should be resizable by dragging borders or double-clicking to fit content
-      thead = `<tr><th>Actions</th>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
+      const actionsCol = '<th class="actions-header">Actions</th>';
+      const otherCols = colDefs.map(col => `<th class="resizable-header" data-column="${this.escapeHTML(col.path)}">${this.escapeHTML(col.label)}<div class="resize-handle"></div></th>`).join('');
+      thead = `<tr>${actionsCol}${otherCols}</tr>`;
     } else if (colDefs.length) {
-      thead = `<tr>${colDefs.map(col => `<th>${this.escapeHTML(col.label)}</th>`).join('')}</tr>`;
+      thead = `<tr>${colDefs.map(col => `<th class="resizable-header" data-column="${this.escapeHTML(col.path)}">${this.escapeHTML(col.label)}<div class="resize-handle"></div></th>`).join('')}</tr>`;
     }
     
     let rows = data.map((row, index) => {
@@ -642,6 +817,7 @@ class JsonTableViewer extends HTMLElement {
     
     const row = data[rowIndex];
     const allPaths = this.getAllFieldPaths(row);
+    const config = this.config;
     
     let tableHTML = '<table class="field-table">';
     for (const path of allPaths) {
@@ -651,15 +827,32 @@ class JsonTableViewer extends HTMLElement {
                        typeof value === 'object' ? JSON.stringify(value) : 
                        String(value);
       
+      // Check if column is already visible
+      const isColumnVisible = config.find(c => (typeof c === 'string' ? c : c.path) === path);
+      
       // Future enhancement: Add column visibility toggle and custom action buttons
       // - Show "Hide Column" button when column is already visible
       // - Add hamburger menu for additional custom actions with callback support
       // - Keep UI compact while providing extensibility for component users
+      const columnButton = isColumnVisible 
+        ? `<button class="hide-column-btn" data-path="${this.escapeHTML(path)}">- Hide Column</button>`
+        : `<button class="add-column-btn" data-path="${this.escapeHTML(path)}">+ Add Column</button>`;
+      
       tableHTML += `
         <tr>
           <td class="field-name">
-            ${this.escapeHTML(path)}
-            <button class="add-column-btn" data-path="${this.escapeHTML(path)}">+ Add Column</button>
+            <div class="field-actions">
+              ${this.escapeHTML(path)}
+              ${columnButton}
+              <div class="actions-menu">
+                <button class="actions-toggle" data-path="${this.escapeHTML(path)}">⋯</button>
+                <div class="actions-dropdown" id="dropdown-${this.escapeHTML(path)}">
+                  <button class="dropdown-item" data-action="copy-path" data-path="${this.escapeHTML(path)}">Copy Path</button>
+                  <button class="dropdown-item" data-action="copy-value" data-path="${this.escapeHTML(path)}">Copy Value</button>
+                  <button class="dropdown-item" data-action="inspect" data-path="${this.escapeHTML(path)}">Inspect</button>
+                </div>
+              </div>
+            </div>
           </td>
           <td class="field-value">${this.escapeHTML(valueStr)}</td>
         </tr>
@@ -708,6 +901,104 @@ class JsonTableViewer extends HTMLElement {
       }
       
       this.dispatchEvent(new CustomEvent('columnAdd', { detail: { path, config } }));
+    }
+  }
+
+  hideColumn(path) {
+    const config = this.config;
+    const index = config.findIndex(c => (typeof c === 'string' ? c : c.path) === path);
+    if (index !== -1) {
+      config.splice(index, 1);
+      this.config = config;
+      
+      // Update control if visible
+      const configInput = this.shadowRoot.getElementById('configInput');
+      if (configInput) {
+        configInput.value = JSON.stringify(config, null, 2);
+      }
+      
+      this.dispatchEvent(new CustomEvent('columnHide', { detail: { path, config } }));
+    }
+  }
+
+  autoFitColumn(columnHeader) {
+    // Reset width to auto to calculate content width
+    columnHeader.style.width = 'auto';
+    columnHeader.style.minWidth = 'auto';
+    
+    // Get the computed width
+    const computedWidth = parseInt(window.getComputedStyle(columnHeader).width, 10);
+    
+    // Set a minimum width and add some padding
+    const finalWidth = Math.max(computedWidth + 20, 80);
+    columnHeader.style.width = finalWidth + 'px';
+    columnHeader.style.minWidth = finalWidth + 'px';
+  }
+
+  toggleActionsMenu(path) {
+    const dropdown = this.shadowRoot.getElementById(`dropdown-${path}`);
+    const isVisible = dropdown.classList.contains('show');
+    
+    // Close all other dropdowns
+    this.shadowRoot.querySelectorAll('.actions-dropdown.show').forEach(dd => {
+      dd.classList.remove('show');
+    });
+    
+    // Toggle current dropdown
+    if (!isVisible) {
+      dropdown.classList.add('show');
+    }
+  }
+
+  handleCustomAction(action, path) {
+    // Close dropdown
+    this.shadowRoot.querySelectorAll('.actions-dropdown.show').forEach(dd => {
+      dd.classList.remove('show');
+    });
+    
+    const data = this.data;
+    const row = data[this.currentRowIndex];
+    const value = this.getValueByPath(row, path);
+    
+    switch (action) {
+      case 'copy-path':
+        this.copyToClipboard(path);
+        break;
+      case 'copy-value':
+        const valueStr = value === undefined ? 'undefined' : 
+                         value === null ? 'null' : 
+                         typeof value === 'object' ? JSON.stringify(value, null, 2) : 
+                         String(value);
+        this.copyToClipboard(valueStr);
+        break;
+      case 'inspect':
+        console.log('Field:', path, 'Value:', value);
+        alert(`Field: ${path}\nValue: ${JSON.stringify(value, null, 2)}`);
+        break;
+      default:
+        // Dispatch custom event for extensibility
+        this.dispatchEvent(new CustomEvent('customAction', { 
+          detail: { action, path, value, rowIndex: this.currentRowIndex, row } 
+        }));
+        break;
+    }
+  }
+
+  async copyToClipboard(text) {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for browsers without clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
     }
   }
 
