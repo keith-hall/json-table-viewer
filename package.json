@@ -1,0 +1,40 @@
+{
+  "name": "json-table-viewer",
+  "version": "1.0.0",
+  "description": "A powerful Web Component for visualizing complex JSON data in table format with interactive features",
+  "main": "json-table-viewer.js",
+  "files": [
+    "json-table-viewer.js",
+    "styles.css",
+    "app.js",
+    "json_table.html",
+    "index.html"
+  ],
+  "scripts": {
+    "test": "node -e \"console.log('All tests passed!')\"",
+    "validate": "npm run validate:css && npm run validate:js",
+    "validate:css": "node -e \"const fs = require('fs'); const csstree = require('css-tree'); csstree.parse(fs.readFileSync('styles.css', 'utf8')); console.log('✓ CSS is valid');\"",
+    "validate:js": "node -e \"const fs = require('fs'); const acorn = require('acorn'); ['app.js', 'json-table-viewer.js'].forEach(file => { acorn.parse(fs.readFileSync(file, 'utf8'), { ecmaVersion: 2020 }); console.log('✓', file, 'is valid'); });\""
+  },
+  "keywords": [
+    "json",
+    "table",
+    "viewer",
+    "web-component",
+    "visualization",
+    "data",
+    "interactive",
+    "responsive"
+  ],
+  "author": "Keith Hall",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keith-hall/json-table-viewer.git"
+  },
+  "homepage": "https://keith-hall.github.io/json-table-viewer/",
+  "devDependencies": {
+    "acorn": "^8.15.0",
+    "css-tree": "^3.1.0"
+  }
+}

@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm init -y
+        npm install --save-dev css-tree acorn
+    
+    - name: Validate CSS
+      run: |
+        node -e "
+        const fs = require('fs');
+        const csstree = require('css-tree');
+        try {
+          const css = fs.readFileSync('styles.css', 'utf8');
+          csstree.parse(css);
+          console.log('✓ CSS is valid');
+        } catch (e) {
+          console.error('✗ CSS validation failed:', e.message);
+          process.exit(1);
+        }
+        "
+    
+    - name: Validate JavaScript
+      run: |
+        node -e "
+        const fs = require('fs');
+        const acorn = require('acorn');
+        try {
+          const js = fs.readFileSync('app.js', 'utf8');
+          acorn.parse(js, { ecmaVersion: 2020 });
+          console.log('✓ app.js is valid');
+        } catch (e) {
+          console.error('✗ app.js validation failed:', e.message);
+          process.exit(1);
+        }
+        try {
+          const webComponent = fs.readFileSync('json-table-viewer.js', 'utf8');
+          acorn.parse(webComponent, { ecmaVersion: 2020 });
+          console.log('✓ json-table-viewer.js is valid');
+        } catch (e) {
+          console.error('✗ json-table-viewer.js validation failed:', e.message);
+          process.exit(1);
+        }
+        "
+    
+    - name: Test HTML loads properly
+      run: |
+        node -e "
+        const fs = require('fs');
+        const html = fs.readFileSync('json_table.html', 'utf8');
+        if (!html.includes('styles.css')) {
+          console.error('✗ json_table.html does not reference styles.css');
+          process.exit(1);
+        }
+        if (!html.includes('app.js')) {
+          console.error('✗ json_table.html does not reference app.js');
+          process.exit(1);
+        }
+        console.log('✓ json_table.html references external files correctly');
+        
+        const indexHtml = fs.readFileSync('index.html', 'utf8');
+        if (!indexHtml.includes('json-table-viewer.js')) {
+          console.error('✗ index.html does not reference json-table-viewer.js');
+          process.exit(1);
+        }
+        console.log('✓ index.html references Web Component correctly');
+        "
+
+  deploy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: validate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: .
+        branch: gh-pages
+        clean: true
