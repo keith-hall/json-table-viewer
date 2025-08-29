@@ -2,7 +2,7 @@
 
 A powerful, modern Web Component for visualizing complex JSON data in table format with interactive features.
 
-![JSON Table Viewer Demo](https://github.com/user-attachments/assets/3972ca7a-b870-426b-a529-5bb2650b60f9)
+![JSON Table Viewer Demo](https://github.com/user-attachments/assets/3f120369-d719-4efe-8e98-be16f2651885)
 
 ## ✨ Features
 
