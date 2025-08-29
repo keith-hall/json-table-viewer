@@ -461,6 +461,7 @@ class JsonTableViewer extends HTMLElement {
   }
 
   escapeHTML(str) {
+    // TODO: built in JS way of doing this?
     return String(str)
       .replace(/</g,'&lt;')
       .replace(/>/g,'&gt;')

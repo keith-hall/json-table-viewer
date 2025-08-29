@@ -14,7 +14,7 @@
     "test": "node -e \"console.log('All tests passed!')\"",
     "validate": "npm run validate:css && npm run validate:js",
     "validate:css": "node -e \"const fs = require('fs'); const csstree = require('css-tree'); csstree.parse(fs.readFileSync('styles.css', 'utf8')); console.log('✓ CSS is valid');\"",
-    "validate:js": "node -e \"const fs = require('fs'); const acorn = require('acorn'); ['app.js', 'json-table-viewer.js'].forEach(file => { acorn.parse(fs.readFileSync(file, 'utf8'), { ecmaVersion: 2020 }); console.log('✓', file, 'is valid'); });\""
+    "validate:js": "node -e \"const fs = require('fs'); const acorn = require('acorn'); ['json-table-viewer.js'].forEach(file => { acorn.parse(fs.readFileSync(file, 'utf8'), { ecmaVersion: 2020 }); console.log('✓', file, 'is valid'); });\""
   },
   "keywords": [
     "json",

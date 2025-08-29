@@ -177,38 +177,6 @@
         <h2>🚀 Interactive Demo</h2>
         
         <div class="demo-controls">
-          <label for="demoData">Sample JSON Data:</label>
-          <textarea id="demoData">[
-  {
-    "Name": "Alice",
-    "Value": 42,
-    "examples": {
-      "x": "hello",
-      "y": "world"
-    },
-    "id": 1
-  },
-  {
-    "Name": "Bob",
-    "Value": 100,
-    "examples": {
-      "x": "foo",
-      "y": "bar"
-    },
-    "id": 2
-  },
-  {
-    "Name": "Charlie",
-    "Value": null,
-    "examples": ["test", "array"],
-    "id": 3
-  }
-]</textarea>
-          
-          <label for="demoConfig">Column Configuration:</label>
-          <textarea id="demoConfig">["Name", "Value", "examples.x", "examples.y", "id"]</textarea>
-          
-          <button onclick="updateDemo()">Update Demo</button>
           <button onclick="loadSampleData()">Load Complex Sample</button>
           <button onclick="resetDemo()">Reset</button>
         </div>
@@ -394,24 +362,7 @@ viewer.addEventListener(<span class="string">'columnAdd'</span>, (e) => {
   <script src="json-table-viewer.js"></script>
   <script>
     const viewer = document.getElementById('demoViewer');
-    const demoData = document.getElementById('demoData');
-    const demoConfig = document.getElementById('demoConfig');
-
-    // Initialize demo
-    updateDemo();
-
-    function updateDemo() {
-      try {
-        const data = JSON.parse(demoData.value);
-        const config = JSON.parse(demoConfig.value);
-        viewer.setData(data);
-        viewer.setConfig(config);
-      } catch (e) {
-        console.error('Error updating demo:', e);
-        alert('Invalid JSON in demo data or config');
-      }
-    }
-
+    
     function loadSampleData() {
       const complexData = [
         {
@@ -476,13 +427,12 @@ viewer.addEventListener(<span class="string">'columnAdd'</span>, (e) => {
         { "path": "id", "label": "ID" }
       ];
 
-      demoData.value = JSON.stringify(complexData, null, 2);
-      demoConfig.value = JSON.stringify(complexConfig, null, 2);
-      updateDemo();
+      viewer.data = complexData;
+      viewer.config = complexConfig;
     }
 
     function resetDemo() {
-      demoData.value = `[
+      viewer.data = [
   {
     "Name": "Alice",
     "Value": 42,
@@ -507,9 +457,11 @@ viewer.addEventListener(<span class="string">'columnAdd'</span>, (e) => {
     "examples": ["test", "array"],
     "id": 3
   }
-]`;
-      demoConfig.value = '["Name", "Value", "examples.x", "examples.y", "id"]';
-      updateDemo();
+];
+      viewer.config = ["Name", "Value", "examples.x", "examples.y", "id"];
+      viewer.showHiddenRows();
+      console.log(viewer);
+      console.log(viewer.showHiddenRows);
     }
 
     // Event listeners for demo
@@ -526,6 +478,8 @@ viewer.addEventListener(<span class="string">'columnAdd'</span>, (e) => {
     viewer.addEventListener('rowhide', (e) => {
       console.log('Row hidden:', e.detail.rowIndex);
     });
+
+    resetDemo();
   </script>
 </body>
 </html>
