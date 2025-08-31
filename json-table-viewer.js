@@ -816,51 +816,23 @@ class JsonTableViewer extends HTMLElement {
     rowPosition.textContent = `Row ${rowIndex + 1} of ${data.length}`;
     
     const row = data[rowIndex];
-    const allPaths = this.getAllFieldPaths(row);
     const config = this.config;
     
-    let tableHTML = '<table class="field-table">';
-    for (const path of allPaths) {
-      const value = this.getValueByPath(row, path);
-      const valueStr = value === undefined ? 'undefined' : 
-                       value === null ? 'null' : 
-                       typeof value === 'object' ? JSON.stringify(value) : 
-                       String(value);
-      
-      // Check if column is already visible
-      const isColumnVisible = config.find(c => (typeof c === 'string' ? c : c.path) === path);
-      
-      // Future enhancement: Add column visibility toggle and custom action buttons
-      // - Show "Hide Column" button when column is already visible
-      // - Add hamburger menu for additional custom actions with callback support
-      // - Keep UI compact while providing extensibility for component users
-      const columnButton = isColumnVisible 
-        ? `<button class="hide-column-btn" data-path="${this.escapeHTML(path)}">- Hide Column</button>`
-        : `<button class="add-column-btn" data-path="${this.escapeHTML(path)}">+ Add Column</button>`;
-      
-      tableHTML += `
-        <tr>
-          <td class="field-name">
-            <div class="field-actions">
-              ${this.escapeHTML(path)}
-              ${columnButton}
-              <div class="actions-menu">
-                <button class="actions-toggle" data-path="${this.escapeHTML(path)}">⋯</button>
-                <div class="actions-dropdown" id="dropdown-${this.escapeHTML(path)}">
-                  <button class="dropdown-item" data-action="copy-path" data-path="${this.escapeHTML(path)}">Copy Path</button>
-                  <button class="dropdown-item" data-action="copy-value" data-path="${this.escapeHTML(path)}">Copy Value</button>
-                  <button class="dropdown-item" data-action="inspect" data-path="${this.escapeHTML(path)}">Inspect</button>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="field-value">${this.escapeHTML(valueStr)}</td>
-        </tr>
-      `;
-    }
-    tableHTML += '</table>';
+    // Clear previous content and create JsonTreeView
+    rowDetails.innerHTML = '<json-tree-view></json-tree-view>';
+    const treeView = rowDetails.querySelector('json-tree-view');
     
-    rowDetails.innerHTML = tableHTML;
+    if (treeView) {
+      // Set up callbacks for tree view actions
+      const callbacks = {
+        onAddColumn: (path) => this.addColumn(path),
+        onHideColumn: (path) => this.hideColumn(path),
+        onActionClick: (action, path, element) => this.handleTreeAction(action, path, element)
+      };
+      
+      treeView.setData(row, config, callbacks);
+    }
+    
     modal.style.display = 'block';
     
     this.dispatchEvent(new CustomEvent('rowdetails', { detail: { rowIndex, row } }));
@@ -1005,6 +977,35 @@ class JsonTableViewer extends HTMLElement {
   closeModal() {
     const modal = this.shadowRoot.getElementById('rowModal');
     modal.style.display = 'none';
+  }
+
+  hideColumn(path) {
+    const config = this.config;
+    const index = config.findIndex(c => (typeof c === 'string' ? c : c.path) === path);
+    if (index >= 0) {
+      config.splice(index, 1);
+      this.config = config;
+      
+      // Update control if visible
+      const configInput = this.shadowRoot.getElementById('configInput');
+      if (configInput) {
+        configInput.value = JSON.stringify(config, null, 2);
+      }
+      
+      // Refresh the tree view in the modal if it's open
+      const modal = this.shadowRoot.getElementById('rowModal');
+      if (modal.style.display === 'block') {
+        this.showRowDetails(this.currentRowIndex);
+      }
+      
+      this.dispatchEvent(new CustomEvent('columnHide', { detail: { path, config } }));
+    }
+  }
+
+  handleTreeAction(action, path, element) {
+    if (action === 'menu') {
+      this.handleCustomAction('inspect', path);
+    }
   }
 
   // Public API methods
